@@ -19,15 +19,15 @@ namespace WebAdvert.Web.Services
 
         public async Task<bool> UploadFileAsync(string fileName, Stream storageStream)
         {
-            if (string.IsNullOrEmpty(fileName)) throw new ArgumentException(message: "File name must be specified.");
+            if (string.IsNullOrEmpty(fileName)) throw new ArgumentException("File name must be specified.");
 
-            var bucketName = _configuration.GetValue<string>(key: "ImageBucket");
+            var bucketName = _configuration.GetValue<string>("ImageBucket");
 
             using (var client = new AmazonS3Client())
             {
                 if (storageStream.Length > 0)
                     if (storageStream.CanSeek)
-                        storageStream.Seek(offset: 0, SeekOrigin.Begin);
+                        storageStream.Seek(0, SeekOrigin.Begin);
 
                 var request = new PutObjectRequest
                 {
@@ -36,12 +36,9 @@ namespace WebAdvert.Web.Services
                     InputStream = storageStream,
                     Key = fileName
                 };
-
-                var response = await client.PutObjectAsync(request);
+                var response = await client.PutObjectAsync(request).ConfigureAwait(false);
                 return response.HttpStatusCode == HttpStatusCode.OK;
             }
-
-            return true;
         }
     }
 }

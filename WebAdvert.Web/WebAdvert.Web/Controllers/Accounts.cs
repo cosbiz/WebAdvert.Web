@@ -21,7 +21,7 @@ namespace WebAdvert.Web.Controllers
             _pool = pool;
         }
 
-        public async Task<IActionResult> Signup()
+        public IActionResult Signup()
         {
             var model = new SignupModel();
             return View(model);
@@ -51,7 +51,7 @@ namespace WebAdvert.Web.Controllers
             return View();
         }
 
-        public async Task<IActionResult> Confirm(ConfirmModel model)
+        public IActionResult Confirm(ConfirmModel model)
         {
             return View(model);
         }
@@ -88,7 +88,7 @@ namespace WebAdvert.Web.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> Login(LoginModel model)
+        public IActionResult Login(LoginModel model)
         {
             return View(model);
         }

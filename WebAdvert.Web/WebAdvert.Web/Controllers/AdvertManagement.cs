@@ -1,20 +1,28 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using AdvertApi.Models;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebAdvert.Web.Models.AdvertManagement;
+using WebAdvert.Web.ServiceClients;
 using WebAdvert.Web.Services;
+
 
 namespace WebAdvert.Web.Controllers
 {
-    public class AdvertManagement : Controller
+    public class AdvertManagementController : Controller
     {
         private readonly IFileUploader _fileUploader;
+        private readonly IAdvertApiClient _advertApiClient;
+        private readonly IMapper _mapper;
 
-        public AdvertManagement(IFileUploader fileUploader)
+        public AdvertManagementController(IFileUploader fileUploader, IAdvertApiClient advertApiClient, IMapper mapper)
         {
             _fileUploader = fileUploader;
+            _advertApiClient = advertApiClient;
+            _mapper = mapper;
         }
 
         public IActionResult Create(CreateAdvertViewModel model)
@@ -27,36 +35,58 @@ namespace WebAdvert.Web.Controllers
         {
             if (ModelState.IsValid)
             {
-                var id = "11111";
-                //You must make a call to Advert Api, create the advertisement in the database and return Id
+                var createAdvertModel = _mapper.Map<CreateAdvertModel>(model);
+                createAdvertModel.UserName = User.Identity.Name;
 
-                var fileName = "";
+                var apiCallResponse = await _advertApiClient.Create(createAdvertModel).ConfigureAwait(false);
+                var id = apiCallResponse.Id;
+
+                bool isOkToConfirmAd = true;
+                string filePath = string.Empty;
                 if (imageFile != null)
                 {
-                    fileName = !string.IsNullOrEmpty(imageFile.FileName) ? Path.GetFileName(imageFile.FileName) : id;
-                    var filePath = $"{id}/{fileName}";
+                    var fileName = !string.IsNullOrEmpty(imageFile.FileName) ? Path.GetFileName(imageFile.FileName) : id;
+                    filePath = $"{id}/{fileName}";
 
                     try
                     {
                         using (var readStream = imageFile.OpenReadStream())
                         {
                             var result = await _fileUploader.UploadFileAsync(filePath, readStream)
-                                .ConfigureAwait(continueOnCapturedContext: false);
+                                .ConfigureAwait(false);
                             if (!result)
                                 throw new Exception(
-                                    message: "Could not upload the image to file repository. Please see the logs for details.");
+                                    "Could not upload the image to file repository. Please see the logs for details.");
                         }
-
-                        //Call Advert Api and confirm the advertisement
-
-                        return RedirectToAction("Index", controllerName: "Home");
                     }
                     catch (Exception e)
                     {
-                        //Call Advert Api and cancel the advertisement
+                        isOkToConfirmAd = false;
+                        var confirmModel = new ConfirmAdvertRequest()
+                        {
+                            Id = id,
+                            FilePath = filePath,
+                            Status = AdvertStatus.Pending
+                        };
+                        await _advertApiClient.Confirm(confirmModel).ConfigureAwait(false);
                         Console.WriteLine(e);
                     }
+
+
                 }
+
+                if (isOkToConfirmAd)
+                {
+                    var confirmModel = new ConfirmAdvertRequest()
+                    {
+                        Id = id,
+                        FilePath = filePath,
+                        Status = AdvertStatus.Active
+                    };
+                    await _advertApiClient.Confirm(confirmModel).ConfigureAwait(false);
+                }
+
+                return RedirectToAction("Index", "Home");
             }
 
             return View(model);
