@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -48,6 +50,11 @@ namespace WebAdvert.Web.ServiceClients
             return response.StatusCode == HttpStatusCode.OK;
         }
 
-        
+        public async Task<List<Advertisement>> GetAllAsync()
+        {
+            var apiCallResponse = await _client.GetAsync(new Uri($"{_baseAddress}/all"));
+            var allAdvertModels = await apiCallResponse.Content.ReadAsAsync<List<AdvertModel>>();
+            return allAdvertModels.Select(x => _mapper.Map<Advertisement>(x)).ToList();
+        }
     }
 }

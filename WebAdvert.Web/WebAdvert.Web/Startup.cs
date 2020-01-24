@@ -46,6 +46,7 @@ namespace WebAdvert.Web
             services.AddAutoMapper(typeof(Startup));
             services.AddTransient<IFileUploader, S3FileUploader>();
             services.AddHttpClient<IAdvertApiClient, AdvertApiClient>();
+            services.AddHttpClient<ISearchApiClient, SearchApiClient>();
 
             services.AddControllersWithViews();
         }
@@ -84,7 +85,7 @@ namespace WebAdvert.Web
 
             app.UseAuthorization();
 
-            //app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
             app.UseEndpoints(endpoints =>
             {
