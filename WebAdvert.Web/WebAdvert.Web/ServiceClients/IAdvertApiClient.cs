@@ -9,5 +9,6 @@ namespace WebAdvert.Web.ServiceClients
         Task<AdvertResponse> Create(CreateAdvertModel model);
         Task<bool> Confirm(ConfirmAdvertRequest model);
         Task<List<Advertisement>> GetAllAsync();
+        Task<Advertisement> GetAsync(string advertId);
     }
 }
